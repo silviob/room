@@ -3,8 +3,10 @@
 
   QUnit.config.reorder = false;
 
-  var fail = function(msg) { ok(false, msg) };
+  var userName = 'testdude@test.com';
+  var password = 'password';
 
+  var fail = function(msg) { ok(false, msg) };
 
   var failure = function() {
     fail("shouldn't get here");
@@ -24,6 +26,32 @@
       start();
     }
   };
+
+
+  var ensureLoggedIn = function() {
+    var options = { user: {} };
+    options.user.email = userName;
+    options.user.password = password;
+    $.create('/users/sign_in', options,
+      function() {
+        ok(true, 'successfully logged in');
+        success();
+      },
+      function(response) {
+        console.log(response);
+        options.user.password_confirmation = password;
+        $.create('/users', options,
+          function() {
+            ok(true, 'successfully created new user');
+          },
+          failure);
+      });
+  }
+
+  asyncTest('can log in', function(){
+    ensureLoggedIn();
+  });
+
 
   var testModel = function(name, model,
                                    createModel,
