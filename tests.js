@@ -3,9 +3,6 @@
 
   QUnit.config.reorder = false;
 
-  var userName = 'testdude@test.com';
-  var password = 'password';
-
   var fail = function(msg) { ok(false, msg) };
 
   var failure = function() {
@@ -27,36 +24,72 @@
     }
   };
 
+  var logOut = function() {
+    $.read('/users/sign_out', success, failure);
+  };
 
-  var ensureLoggedIn = function() {
+  var ensureLoggedIn = function(username, password) {
+    var updateAuthToken = function() {
+      $.read('/authenticity_token.json', {},
+        // Not sure why even tho the request succeeds, the infrastructure
+        // calls the error callback. Sigh.
+        failure,
+        function(xhr, headers) {
+          $.restSetup.csrfToken = encodeURIComponent(xhr.responseText);
+          ok(true, "auth token: " + xhr.responseText);
+          ok(true, "csrf token: " + $.restSetup.csrfToken);
+          success();
+        });
+    };
     var options = { user: {} };
-    options.user.email = userName;
+    options.user.email = username;
     options.user.password = password;
-    $.create('/users/sign_in', options,
+    options.user.remember_me = 1;
+    $.read('/users/sign_out',
       function() {
-        ok(true, 'successfully logged in');
-        success();
-      },
-      function(response) {
-        console.log(response);
-        options.user.password_confirmation = password;
-        $.create('/users', options,
-          function() {
-            ok(true, 'successfully created new user');
+        $.create('/users/sign_in.json', options,
+          function(data, headers, xhr) {
+            ok(true, 'successfully logged in: ' + username);
+            updateAuthToken();
           },
-          failure);
-      });
+          function(xhr, headers) {
+            options.user.password_confirmation = password;
+            $.create('/users.json', options,
+              function() {
+                ok(true, 'successfully created new user: ' + username);
+                updateAuthToken();
+              },
+              failure);
+          });
+      },
+      failure);
   }
-
-  asyncTest('can log in', function(){
-    ensureLoggedIn();
-  });
-
 
   var testModel = function(name, model,
                                    createModel,
                                    updateModel) {
-    module("Testing Model " + name)
+    module("Testing Model " + name);
+
+    asyncTest("login in testdude", function() {
+      ensureLoggedIn('testdude@test.com', 'password');
+    });
+
+    var modelData = createModel();
+    var createdModel = null;
+    asyncTest("creating an instance", function() {
+      model.create(modelData,
+        function(newlyCreated) {
+          asyncTry(function() {
+            for(i in modelData) {
+              equals(newlyCreated[i], modelData[i], "the data matches");
+            }
+            ok(true, "successfully created an instance");
+            createdModel = newlyCreated;
+            success();
+          });
+        },
+        failure);
+    });
 
     asyncTest("we can list the model", function() {
       model.list(
@@ -126,6 +159,18 @@
         },
         failure
       );
+    });
+
+    asyncTest("login in testdudetwo", function() {
+      ensureLoggedIn('testdudetwo@test.com', 'password');
+    });
+
+    asyncTest("can read another user's model", function() {
+      model.get(createdModel.id, success, failure);
+    });
+
+    asyncTest("cannot destroy another user's model", function() {
+      model.destroy(createdModel.id, failure, success);
     });
 
   }
