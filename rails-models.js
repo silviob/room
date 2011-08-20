@@ -27,7 +27,7 @@
       };
       $.models[type].destroy = function(id, success, failure) {
         $.destroy('/{types}/{id}', {types: typeCollection,
-                                 id: id},
+                                    id: id},
           success,
           failure);
       };
@@ -35,6 +35,14 @@
         var options = {types: typeCollection};
         options[type] = data;
         $.create('/{types}', options,
+          function(response) {
+            success(response[type]);
+          },
+          failure);
+      };
+      $.models[type].update = function(id, data, success, failure) {
+        $.update('/{types}/{id}', {types: typeCollection,
+                                   id: id},
           function(response) {
             success(response[type]);
           },

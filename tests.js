@@ -161,6 +161,21 @@
       );
     });
 
+    asyncTest("updating the created instance", function() {
+      var newData = updateModel(createdModel);
+      model.update(createdModel.id, newData,
+        function(updated) {
+          asyncTry(function() {
+            for(i in newData) {
+              equal(newData[i], createdModel[i], "checking new data to the updated model");
+            }
+            success();
+          });
+        },
+        failure
+      );
+    });
+
     asyncTest("login in testdudetwo", function() {
       ensureLoggedIn('testdudetwo@test.com', 'password');
     });
@@ -173,6 +188,10 @@
       model.destroy(createdModel.id, failure, success);
     });
 
+    asyncTest("cannot update another user's model", function() {
+      model.update(createdModel.id, updateModel(createdModel),
+                                              failure, success);
+    });
   }
 
 
@@ -185,6 +204,7 @@
   };
   testModel("Exercise", $.models.exercise, createExercise, updateExercise);
 
+
   var createRoutine = function() {
     return { name: "A new Routine!" };
   };
@@ -194,6 +214,13 @@
   };
   testModel("Routine", $.models.routine, createRoutine, updateRoutine);
 
+  var createWorkout = function() {
+    return { current_exercise_id: 3 };
+  };
+  var updateWorkout = function(original) {
+    original.current_exercise_id = 7;
+    return original;
+  };
+  testModel("Workout", $.models.workout, createWorkout, updateWorkout);
+
 })();
-
-
