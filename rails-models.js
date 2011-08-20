@@ -9,7 +9,7 @@
       $.read('/{types}/{id}', {types: typeCollection,
                                  id: id},
           function(response) {
-            data = [];
+            var data = [];
             success(response[type]);
           },
           failure);
@@ -17,8 +17,8 @@
       $.models[type].list = function(success, failure) {
         $.read('/{types}', {types: typeCollection},
           function(response) {
-            data = [];
-            for(i in response) {
+            var data = [];
+            for(var i in response) {
               data.push(response[i][type]);
             }
             success(data);

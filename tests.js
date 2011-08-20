@@ -2,6 +2,7 @@
 (function() {
 
   QUnit.config.reorder = false;
+  QUnit.config.noglobals = true;
 
   var fail = function(msg) { ok(false, msg) };
 
@@ -80,7 +81,7 @@
       model.create(modelData,
         function(newlyCreated) {
           asyncTry(function() {
-            for(i in modelData) {
+            for(var i in modelData) {
               equals(newlyCreated[i], modelData[i], "the data matches");
             }
             ok(true, "successfully created an instance");
@@ -109,7 +110,7 @@
         function(data) {
           asyncTry(function() {
             ok(data, "we found some data");
-            for(i in data) {
+            for(var i in data) {
               leftOvers.push(data[i]);
             };
             success();
@@ -136,7 +137,7 @@
       model.create(modelData,
         function(newlyCreated) {
           asyncTry(function() {
-            for(i in modelData) {
+            for(var i in modelData) {
               equals(newlyCreated[i], modelData[i], "the data matches");
             }
             ok(true, "successfully created an instance");
@@ -151,7 +152,7 @@
       model.get(createdModel.id,
         function(found) {
           asyncTry(function() {
-            for(i in createdModel) {
+            for(var i in createdModel) {
               equal(found[i], createdModel[i], "checking found to created");
             }
             success();
@@ -166,7 +167,7 @@
       model.update(createdModel.id, newData,
         function(updated) {
           asyncTry(function() {
-            for(i in newData) {
+            for(var i in newData) {
               equal(newData[i], createdModel[i], "checking new data to the updated model");
             }
             success();
