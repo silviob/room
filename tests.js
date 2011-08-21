@@ -78,7 +78,7 @@
     var modelData = createModel();
     var createdModel = null;
     asyncTest("creating an instance", function() {
-      model.create(modelData,
+      model().create(modelData,
         function(newlyCreated) {
           asyncTry(function() {
             for(var i in modelData) {
@@ -93,7 +93,7 @@
     });
 
     asyncTest("we can list the model", function() {
-      model.list(
+      model().list(
         function(data) {
           asyncTry(function() {
             ok(data, "returned data is not null");
@@ -106,7 +106,7 @@
 
     var leftOvers = [];
     asyncTest("finding leftovers", function() {
-      model.list(
+      model().list(
         function(data) {
           asyncTry(function() {
             ok(data, "we found some data");
@@ -126,7 +126,7 @@
         current = leftOvers[0];
         leftOvers = leftOvers.splice(1, leftOvers.length - 1);
         stop();
-        model.destroy(current.id, success, failure);
+        model(current.id).destroy(success, failure);
       }
       success();
     });
@@ -134,7 +134,7 @@
     var modelData = createModel();
     var createdModel = null;
     asyncTest("creating an instance", function() {
-      model.create(modelData,
+      model().create(modelData,
         function(newlyCreated) {
           asyncTry(function() {
             for(var i in modelData) {
@@ -149,7 +149,7 @@
     });
 
     asyncTest("retrieving the created instance", function() {
-      model.get(createdModel.id,
+      model(createdModel.id).read(
         function(found) {
           asyncTry(function() {
             for(var i in createdModel) {
@@ -164,7 +164,7 @@
 
     asyncTest("updating the created instance", function() {
       var newData = updateModel(createdModel);
-      model.update(createdModel.id, newData,
+      model(createdModel.id).update(newData,
         function(updated) {
           asyncTry(function() {
             for(var i in newData) {
@@ -182,15 +182,15 @@
     });
 
     asyncTest("can read another user's model", function() {
-      model.get(createdModel.id, success, failure);
+      model(createdModel.id).read(success, failure);
     });
 
     asyncTest("cannot destroy another user's model", function() {
-      model.destroy(createdModel.id, failure, success);
+      model(createdModel.id).destroy(failure, success);
     });
 
     asyncTest("cannot update another user's model", function() {
-      model.update(createdModel.id, updateModel(createdModel),
+      model(createdModel.id).update(updateModel(createdModel),
                                               failure, success);
     });
   }
@@ -203,8 +203,7 @@
     original.name = "A different name for the same Exercise";
     return original;
   };
-  testModel("Exercise", $.models.exercise, createExercise, updateExercise);
-
+  testModel("Exercise", $.room.exercise, createExercise, updateExercise);
 
   var createRoutine = function() {
     return { name: "A new Routine!" };
@@ -213,7 +212,7 @@
     original.name = "A different name for the same Routine";
     return original;
   };
-  testModel("Routine", $.models.routine, createRoutine, updateRoutine);
+  testModel("Routine", $.room.routine, createRoutine, updateRoutine);
 
   var createWorkout = function() {
     return { current_exercise_id: 3 };
@@ -222,6 +221,6 @@
     original.current_exercise_id = 7;
     return original;
   };
-  testModel("Workout", $.models.workout, createWorkout, updateWorkout);
+  testModel("Workout", $.room.workout, createWorkout, updateWorkout);
 
 })();
