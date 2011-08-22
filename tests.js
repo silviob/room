@@ -223,4 +223,21 @@
   };
   testModel("Workout", $.room.workout, createWorkout, updateWorkout);
 
+  asyncTest('nested exercise on routine', function() {
+    $.room.routine().create(createRoutine(),
+      function(newRoutine) {
+        $.room.routine(newRoutine.id).exercise().create(createExercise(),
+          function(newExercise) {
+            $.room.routine(newRoutine.id).exercise().list(
+              function(foundExercises) {
+                equal(foundExercises.length, 1, 'found the one nested exercise');
+                success();
+              },
+              failure);
+          },
+          failure);
+      },
+      failure);
+  });
+
 })();
