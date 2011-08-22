@@ -1,5 +1,6 @@
 (function($) {
 
+  var inner = {};
   var resources = {};
   var currentPath = '';
   var currentType = null;
@@ -57,9 +58,12 @@
       failure);
   };
 
-  $.room = {};
+  $.room = function() {
+    getAndClearPath();
+    return inner;
+  };
 
-  $.room.addResource = function(name, path, parent, type) {
+  inner.addResource = function(name, path, parent, type) {
     var resource = function(id) {
       var idPart = id ? '/' + id : '';
       currentPath += '/' + path + idPart;
@@ -75,22 +79,22 @@
     if(parent) {
       resources[parent][type] = resource;
     } else {
-      $.room[type] = resource;
+      inner[type] = resource;
     }
   };
 
-  $.room.initFromMetaTags = function() {
+  inner.initFromMetaTags = function() {
     $('meta').each(function (i, element) {
       if($(element).data('room-resource')) {
         var name = element.name;
         var type = element.content;
         var path = $(element).data('room-path');
         var parent = $(element).data('room-parent');
-        $.room.addResource(name, path, parent, type);
+        inner.addResource(name, path, parent, type);
       }
     });
   };
 
 })(jQuery);
 
-$.room.initFromMetaTags();
+$.room().initFromMetaTags();

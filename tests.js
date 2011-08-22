@@ -203,7 +203,7 @@
     original.name = "A different name for the same Exercise";
     return original;
   };
-  testModel("Exercise", $.room.exercise, createExercise, updateExercise);
+  testModel("Exercise", $.room().exercise, createExercise, updateExercise);
 
   var createRoutine = function() {
     return { name: "A new Routine!" };
@@ -212,7 +212,7 @@
     original.name = "A different name for the same Routine";
     return original;
   };
-  testModel("Routine", $.room.routine, createRoutine, updateRoutine);
+  testModel("Routine", $.room().routine, createRoutine, updateRoutine);
 
   var createWorkout = function() {
     return { current_exercise_id: 3 };
@@ -221,14 +221,18 @@
     original.current_exercise_id = 7;
     return original;
   };
-  testModel("Workout", $.room.workout, createWorkout, updateWorkout);
+  testModel("Workout", $.room().workout, createWorkout, updateWorkout);
+
+  asyncTest("login in testdude", function() {
+    ensureLoggedIn('testdude@test.com', 'password');
+  });
 
   asyncTest('nested exercise on routine', function() {
-    $.room.routine().create(createRoutine(),
+    $.room().routine().create(createRoutine(),
       function(newRoutine) {
-        $.room.routine(newRoutine.id).exercise().create(createExercise(),
+        $.room().routine(newRoutine.id).exercise().create(createExercise(),
           function(newExercise) {
-            $.room.routine(newRoutine.id).exercise().list(
+            $.room().routine(newRoutine.id).exercise().list(
               function(foundExercises) {
                 equal(foundExercises.length, 1, 'found the one nested exercise');
                 success();
