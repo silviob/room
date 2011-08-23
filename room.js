@@ -5,6 +5,15 @@
   var currentPath = '';
   var currentType = null;
 
+  var identity = function(data) { return data; };
+
+  inner.ajax = jQuery.ajax;
+  inner.extension = "json";
+  
+  inner.createDataFilter = identity;
+  inner.updateDataFilter = identity;
+  inner.destroyDataFilter = identity;
+
   var getAndClearPath = function() {
     var path = currentPath;
     currentPath = '';
@@ -12,50 +21,67 @@
   }
 
   var create = function(data, success, failure) {
-    var options = {};
-    options[currentType] = data;
-    $.create(getAndClearPath(), options,
-      function(response) {
+    var payload = {};
+    payload[currentType] = data;
+    inner.ajax({
+      url: getAndClearPath() + '.' + inner.extension,
+      data: inner.createDataFilter(payload),
+      type: 'post',
+      beforeSend: inner.beforeSendCreate,
+      success: function(response) {
         success(response[currentType]);
       },
-      failure);
+      error: failure
+    });
   };
 
   var read = function(success, failure) {
-    $.read(getAndClearPath(), {},
-      function(response) {
+    inner.ajax({
+      url: getAndClearPath() + '.' + inner.extension,
+      success: function(response) {
         var data = [];
         success(response[currentType]);
       },
-      failure);
+      error: failure
+    });
   };
 
   var update = function(data, success, failure) {
-    var options = {};
-    options[currentType] = data;
-    $.update(getAndClearPath(), options,
-      function(response) {
+    var payload = {};
+    payload[currentType] = data;
+    inner.ajax({
+      url: getAndClearPath() + '.' + inner.extension,
+      data: inner.updateDataFilter(payload),
+      type: 'put',
+      success: function(response) {
         success(response[currentType]);
       },
-      failure);
+      error: failure
+    });
   };
 
   var destroy = function(success, failure) {
-    $.destroy(getAndClearPath(), {},
-      success,
-      failure);
+    inner.ajax({
+      url: getAndClearPath() + '.' + inner.extension,
+      data: inner.destroyDataFilter({}),
+      type: 'delete',
+      success: success,
+      error: failure
+    });
   };
 
   var list = function(success, failure) {
-    $.read(getAndClearPath(), {},
-      function(response) {
+    inner.ajax({
+      url: getAndClearPath() + '.' + inner.extension,
+      success: function(response) {
         var data = [];
         for(var i in response) {
           data.push(response[i][currentType]);
         }
         success(data);
       },
-      failure);
+      error: failure
+    });
   };
 
   $.room = function() {

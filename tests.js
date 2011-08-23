@@ -4,6 +4,16 @@
   QUnit.config.reorder = false;
   QUnit.config.noglobals = true;
 
+  var authToken = $('meta[name=csrf-token]').attr('content');
+  var addAuthTokenFilter = function(original) {
+    original.authenticity_token = authToken;
+    return original;
+  };
+
+  $.room().createDataFilter = addAuthTokenFilter;
+  $.room().updateDataFilter = addAuthTokenFilter;
+  $.room().destroyDataFilter = addAuthTokenFilter;
+
   var fail = function(msg) { ok(false, msg) };
 
   var failure = function() {
@@ -31,31 +41,31 @@
 
   var ensureLoggedIn = function(username, password) {
     var updateAuthToken = function() {
-      $.read('/authenticity_token.json', {},
-        // Not sure why even tho the request succeeds, the infrastructure
-        // calls the error callback. Sigh.
-        failure,
-        function(xhr, headers) {
-          $.restSetup.csrfToken = encodeURIComponent(xhr.responseText);
+      $.room().ajax({
+        url: '/authenticity_token.json',
+        error: function(xhr) {
+          authToken = xhr.responseText;
           ok(true, "auth token: " + xhr.responseText);
-          ok(true, "csrf token: " + $.restSetup.csrfToken);
           success();
-        });
+        },
+        success: failure
+      });
     };
-    var options = { user: {} };
-    options.user.email = username;
-    options.user.password = password;
-    options.user.remember_me = 1;
-    $.read('/users/sign_out.json',
+    var params = {};
+    params.email = username;
+    params.password = password;
+    params.remember_me = 1;
+    $.room().user('sign_out').read(
       function() {
-        $.create('/users/sign_in.json', options,
-          function(data, headers, xhr) {
+        ok(true, 'successfully logged out');
+        $.room().user('sign_in').create(params,
+          function() {
             ok(true, 'successfully logged in: ' + username);
             updateAuthToken();
           },
-          function(xhr, headers) {
-            options.user.password_confirmation = password;
-            $.create('/users.json', options,
+          function() {
+            params.password_confirmation = password;
+            $.room().user().create(params,
               function() {
                 ok(true, 'successfully created new user: ' + username);
                 updateAuthToken();
