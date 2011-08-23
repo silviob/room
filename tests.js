@@ -46,7 +46,7 @@
     options.user.email = username;
     options.user.password = password;
     options.user.remember_me = 1;
-    $.read('/users/sign_out',
+    $.read('/users/sign_out.json',
       function() {
         $.create('/users/sign_in.json', options,
           function(data, headers, xhr) {
