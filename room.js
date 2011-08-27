@@ -4,15 +4,64 @@
   var resources = {};
   var currentPath = '';
   var currentType = null;
+  var loopbackStore = { data: {}, parent: null };
 
-  var identity = function(data) { return data; };
+  var identity = function(data) { 
+    return data;
+  };
 
-  inner.ajax = jQuery.ajax;
   inner.extension = "json";
   
   inner.createDataFilter = identity;
   inner.updateDataFilter = identity;
   inner.destroyDataFilter = identity;
+
+  var getOrCreateLeaf = function(path, store) {
+//    console.log(path);
+    var parts = path.split('/');
+    var zeroth = parts[0];
+    parts = parts.slice(1);
+    if(zeroth === '') return getOrCreateLeaf(parts.join('/'), store);
+    if(!store.data[zeroth]) store.data[zeroth] = { data: {}, parent: store };
+    if(parts.length == 0) return store.data[zeroth];
+    return getOrCreateLeaf(parts.join('/'), store.data[zeroth]);
+  }
+
+  var loopback = function(options) {
+    var re = new RegExp('\.' + inner.extension + '$');
+    options.url = options.url.replace(re, '');
+    options.type = options.type || 'get';
+    switch(options.type.toLowerCase()) {
+    case 'post':
+      var store = getOrCreateLeaf(options.url, loopbackStore);
+      var stored = 0;
+      for(var i in store) { stored++ };
+      store.data[stored] = { data: $.extend(true, {}, options.data) };
+      options.success(store.data[stored].data);
+      break;
+    case 'get':
+      var store = getOrCreateLeaf(options.url, loopbackStore);
+      options.success(store.data);
+      break;
+    case 'delete':
+      var store = getOrCreateLeaf(options.url, loopbackStore);
+      var id = options.url.slice(options.url.lastIndexOf('/') + 1);
+      var data = 
+      delete parent[id];
+      options.success();
+      break;
+    }
+  }
+
+  inner.enterLoopbackMode = function() {
+    inner.ajax = loopback;
+  }
+
+  inner.leaveLoopbackMode = function() {
+    inner.ajax = jQuery.ajax;
+  }
+
+  inner.leaveLoopbackMode();
 
   var getAndClearPath = function() {
     var path = currentPath;
@@ -91,7 +140,7 @@
 
   inner.addResource = function(name, path, parent, type) {
     var resource = function(id) {
-      var idPart = id ? '/' + id : '';
+      var idPart = id !== undefined ? '/' + id : '';
       currentPath += '/' + path + idPart;
       currentType = type;
       return resource;
