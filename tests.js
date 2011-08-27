@@ -4,15 +4,21 @@
   QUnit.config.reorder = false;
   QUnit.config.noglobals = true;
 
+  var compose = function(f, g) {
+    return function(data) {
+      return f.call(this, g.call(this, data));
+    };
+  }
+
   var authToken = $('meta[name=csrf-token]').attr('content');
   var addAuthTokenFilter = function(original) {
     original.authenticity_token = authToken;
     return original;
   };
 
-  $.room().createDataFilter = addAuthTokenFilter;
-  $.room().updateDataFilter = addAuthTokenFilter;
-  $.room().destroyDataFilter = addAuthTokenFilter;
+  $.room().configurePackData('rails');
+  $.room().packData.create = compose(addAuthTokenFilter, $.room().packData.create);
+  $.room().packData.update = compose(addAuthTokenFilter, $.room().packData.update, addAuthTokenFilter);
 
   var fail = function(msg) { ok(false, msg) };
 
@@ -45,6 +51,7 @@
         url: '/authenticity_token.json',
         error: function(xhr) {
           authToken = xhr.responseText;
+          $('meta[name=csrf-token]').attr('content', xhr.responseText);
           ok(true, "auth token: " + xhr.responseText);
           success();
         },

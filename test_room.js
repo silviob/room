@@ -47,7 +47,11 @@
   });
 
   asyncTest('destroying the root', function() {
-    $.room().grandfather(2).destroy(success(), failure);
+    $.room().grandfather(2).destroy(success(data), failure);
+  });
+
+  asyncTest('fails when trying to destroy a non-existent resource', function() {
+    $.room().grandfather('this-resource-doesnt-exist').destroy(failure, success());
   });
 
 }())
