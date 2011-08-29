@@ -3,7 +3,6 @@
   var inner = {};
   var resources = {};
   var currentPath = '';
-  var currentType = null;
   var loopbackStore = { data: {}, parent: null };
 
   var printStore = function(store, level) {
@@ -32,7 +31,7 @@
   var railsListUnpack = function(response) {
     var data = [];
     for(var i in response) {
-       data.push(response[i][currentType]);
+       data.push(response[i][this.type]);
     }
     return data;
   }
@@ -129,68 +128,59 @@
   };
 
   var wrapSuccess = function(type, successCallback, options) {
-    console.log('result ' + options.type);
-    console.log(window.result);
     return function(response) {
-    console.log('result ' + options.type);
-    console.log(window.result);
       successCallback(inner.unpackData[type].
                      call(options, response));
     };
   };
 
   var create = function(data, success, failure) {
-    var options = { type: currentType };
     var url = getAndClearPath() + '.' + inner.extension;
     console.log(url);
     inner.ajax({
       url: url,
       data: inner.packData.create.
-                     call(options, data),
+                     call(this, data),
       type: 'post',
-      success: wrapSuccess('create', success, options),
+      success: wrapSuccess('create', success, this),
       error: failure
     });
   };
 
   var read = function(success, failure) {
-    var options = { type: currentType };
     var url = getAndClearPath() + '.' + inner.extension;
     console.log(url);
     inner.ajax({
       url: url,
-      success: wrapSuccess('read', success, options),
+      success: wrapSuccess('read', success, this),
       error: failure
     });
   };
 
   var update = function(data, success, failure) {
-    var options = { type: currentType };
     inner.ajax({
       url: getAndClearPath() + '.' + inner.extension,
       data: inner.packData.update.
-                     call(options, data),
+                     call(this, data),
       type: 'put',
-      success: wrapSuccess('update', success, options),
+      success: wrapSuccess('update', success, this),
       error: failure
     });
   };
 
   var destroy = function(success, failure) {
-    var options = { type: currentType };
     inner.ajax({
       url: getAndClearPath() + '.' + inner.extension,
       type: 'delete',
-      success: wrapSuccess('destroy', success, options),
+      success: wrapSuccess('destroy', success, this),
       error: failure
     });
   };
 
   var list = function(success, failure) {
-    var options = { type: currentType };
     inner.ajax({
       url: getAndClearPath() + '.' + inner.extension,
-      success: wrapSuccess('list', success, options),
+      success: wrapSuccess('list', success, this),
       error: failure
     });
   };
@@ -207,9 +197,9 @@
     var resource = function(id) {
       var idPart = id !== undefined ? '/' + id : '';
       currentPath += '/' + path + idPart;
-      currentType = type;
       return resource;
     }
+    resource.type = data.type;
     resource.create = create;
     resource.read = read;
     resource.update = update;
