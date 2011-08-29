@@ -129,7 +129,11 @@
   };
 
   var wrapSuccess = function(type, successCallback, options) {
+    console.log('result ' + options.type);
+    console.log(window.result);
     return function(response) {
+    console.log('result ' + options.type);
+    console.log(window.result);
       successCallback(inner.unpackData[type].
                      call(options, response));
     };
@@ -137,8 +141,10 @@
 
   var create = function(data, success, failure) {
     var options = { type: currentType };
+    var url = getAndClearPath() + '.' + inner.extension;
+    console.log(url);
     inner.ajax({
-      url: getAndClearPath() + '.' + inner.extension,
+      url: url,
       data: inner.packData.create.
                      call(options, data),
       type: 'post',
@@ -149,8 +155,10 @@
 
   var read = function(success, failure) {
     var options = { type: currentType };
+    var url = getAndClearPath() + '.' + inner.extension;
+    console.log(url);
     inner.ajax({
-      url: getAndClearPath() + '.' + inner.extension,
+      url: url,
       success: wrapSuccess('read', success, options),
       error: failure
     });
@@ -192,7 +200,10 @@
     return inner;
   };
 
-  inner.addResource = function(name, path, parent, type) {
+  inner.addResource = function(name, data) {
+    var path = data.path;
+    var parent = data.parent;
+    var type = data.type;
     var resource = function(id) {
       var idPart = id !== undefined ? '/' + id : '';
       currentPath += '/' + path + idPart;
@@ -206,21 +217,26 @@
     resource.list = list;
     resources[name] = resource;
     if(parent) {
-      resources[parent][type] = resource;
+      resources[parent][path] = resource;
     } else {
-      inner[type] = resource;
+      inner[path] = resource;
     }
   };
 
   inner.initFromMetaTags = function() {
-    $('meta').each(function (i, element) {
-      if($(element).data('room-resource')) {
-        var name = element.name;
-        var type = element.content;
-        var path = $(element).data('room-path');
-        var parent = $(element).data('room-parent');
-        inner.addResource(name, path, parent, type);
+    $('meta[content=room-resource]').each(function (i, element) {
+      var name = element.name;
+      var type = element.content;
+      var data = {};
+      for(var attribute in element.attributes) {
+        var attrName = element.attributes[attribute].name;
+        var re = new RegExp('^data-');
+        if(attrName && attrName.match(re)) {
+          data[attrName.replace(re, '')] =
+                                element.attributes[attribute].value;
+        }
       }
+      inner.addResource(name, data);
     });
   };
 

@@ -62,17 +62,17 @@
     params.email = username;
     params.password = password;
     params.remember_me = 1;
-    $.room().user('sign_out').read(
+    $.room().users('sign_out').read(
       function() {
         ok(true, 'successfully logged out');
-        $.room().user('sign_in').create(params,
+        $.room().users('sign_in').create(params,
           function() {
             ok(true, 'successfully logged in: ' + username);
             updateAuthToken();
           },
           function() {
             params.password_confirmation = password;
-            $.room().user().create(params,
+            $.room().users().create(params,
               function() {
                 ok(true, 'successfully created new user: ' + username);
                 updateAuthToken();
@@ -220,7 +220,7 @@
     original.name = "A different name for the same Exercise";
     return original;
   };
-  testModel("Exercise", $.room().exercise, createExercise, updateExercise);
+  testModel("Exercise", $.room().exercises, createExercise, updateExercise);
 
   var createRoutine = function() {
     return { name: "A new Routine!" };
@@ -229,7 +229,7 @@
     original.name = "A different name for the same Routine";
     return original;
   };
-  testModel("Routine", $.room().routine, createRoutine, updateRoutine);
+  testModel("Routine", $.room().routines, createRoutine, updateRoutine);
 
   var createWorkout = function() {
     return { current_exercise_id: 3 };
@@ -238,18 +238,18 @@
     original.current_exercise_id = 7;
     return original;
   };
-  testModel("Workout", $.room().workout, createWorkout, updateWorkout);
+  testModel("Workout", $.room().workouts, createWorkout, updateWorkout);
 
   asyncTest("login in testdude", function() {
     ensureLoggedIn('testdude@test.com', 'password');
   });
 
   asyncTest('nested exercise on routine', function() {
-    $.room().routine().create(createRoutine(),
+    $.room().routines().create(createRoutine(),
       function(newRoutine) {
-        $.room().routine(newRoutine.id).exercise().create(createExercise(),
+        $.room().routines(newRoutine.id).exercises().create(createExercise(),
           function(newExercise) {
-            $.room().routine(newRoutine.id).exercise().list(
+            $.room().routines(newRoutine.id).exercises().list(
               function(foundExercises) {
                 equal(foundExercises.length, 1, 'found the one nested exercise');
                 success();
