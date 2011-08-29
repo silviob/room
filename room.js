@@ -126,7 +126,14 @@
     var path = currentPath;
     currentPath = '';
     return path;
-  }
+  };
+
+  var wrapSuccess = function(type, successCallback, options) {
+    return function(response) {
+      successCallback(inner.unpackData[type].
+                     call(options, response));
+    };
+  };
 
   var create = function(data, success, failure) {
     var options = { type: currentType };
@@ -135,10 +142,7 @@
       data: inner.packData.create.
                      call(options, data),
       type: 'post',
-      success: function(response) {
-        success(inner.unpackData.create.
-                     call(options, response));
-      },
+      success: wrapSuccess('create', success, options),
       error: failure
     });
   };
@@ -147,10 +151,7 @@
     var options = { type: currentType };
     inner.ajax({
       url: getAndClearPath() + '.' + inner.extension,
-      success: function(response) {
-        success(inner.unpackData.read.
-                     call(options, response));
-      },
+      success: wrapSuccess('read', success, options),
       error: failure
     });
   };
@@ -162,10 +163,7 @@
       data: inner.packData.update.
                      call(options, data),
       type: 'put',
-      success: function(response) {
-        success(inner.unpackData.update.
-                     call(options, response));
-      },
+      success: wrapSuccess('update', success, options),
       error: failure
     });
   };
@@ -175,10 +173,7 @@
     inner.ajax({
       url: getAndClearPath() + '.' + inner.extension,
       type: 'delete',
-      success: function(response) {
-        success(inner.unpackData.destroy.
-                     call(options, response));
-      },
+      success: wrapSuccess('destroy', success, options),
       error: failure
     });
   };
@@ -187,10 +182,7 @@
     var options = { type: currentType };
     inner.ajax({
       url: getAndClearPath() + '.' + inner.extension,
-      success: function(response) {
-        success(inner.unpackData.list.
-                     call(options, response));
-      },
+      success: wrapSuccess('list', success, options),
       error: failure
     });
   };
