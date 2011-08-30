@@ -1,34 +1,44 @@
 (function($) {
 
+
+  // State
+
   var inner = {};
   var resources = {};
-  
-  inner.ajax = jQuery.ajax;
-  
-  var identity = function(data) { 
-    return data;
+
+
+  // Public API
+
+  $.room = function() {
+    return inner;
   };
 
-  var railsSinglePack = function(data) {
-    var payload = {};
-    payload[this.type] = data;
-    return payload;
-  }
-
-  var railsSingleUnpack = function(data) {
-    return data[this.type];
-  }
-
-  var railsListUnpack = function(response) {
-    var data = [];
-    for(var i in response) {
-       data.push(response[i][this.type]);
+  inner.addResource = function(name, data) {
+    var path = data.path;
+    var parent = data.parent;
+    var type = data.type;
+    var resource = function(id) {
+      var idPart = id !== undefined ? '/' + id : '';
+      var localPath = '/' + path + idPart;
+      var context = $.extend({}, resource);
+      context.path = this.path ? this.path : '' + localPath;
+      return context;
     }
-    return data;
-  }
+    $.extend(resource, data);
+    resource.create = create;
+    resource.read = read;
+    resource.update = update;
+    resource.destroy = destroy;
+    resource.list = list;
+    resource.getPath = getPath;
+    resources[name] = resource;
+    if(parent) {
+      resources[parent][path] = resource;
+    } else {
+      inner[path] = resource;
+    }
+  };
 
-  inner.extension = "json";
-  
   inner.configurePackData = function(config) {
     inner.packData = {};
     inner.packData.create = config == 'rails' ? railsSinglePack
@@ -47,19 +57,27 @@
                                                  : identity;
     inner.unpackData.list    = config == 'rails' ? railsListUnpack
                                                  : identity;
-  }
-  inner.configurePackData('rails');
-
-  var getPath = function() {
-    return this.path + '.' + inner.extension;
   };
 
-  var wrapSuccess = function(type, successCallback, options) {
-    return function(response) {
-      successCallback(inner.unpackData[type].
-                     call(options, response));
-    };
+  inner.initFromMetaTags = function() {
+    $('meta[content=room-resource]').each(function (i, element) {
+      var name = element.name;
+      var type = element.content;
+      var data = {};
+      for(var attribute in element.attributes) {
+        var attrName = element.attributes[attribute].name;
+        var re = new RegExp('^data-');
+        if(attrName && attrName.match(re)) {
+          data[attrName.replace(re, '')] =
+                                element.attributes[attribute].value;
+        }
+      }
+      inner.addResource(name, data);
+    });
   };
+
+
+// CRUD
 
   var create = function(data, success, failure) {
     var url = this.getPath();
@@ -110,53 +128,47 @@
     });
   };
 
-  $.room = function() {
-    return inner;
+// Helper functions
+
+  var identity = function(data) { 
+    return data;
   };
 
-  inner.addResource = function(name, data) {
-    var path = data.path;
-    var parent = data.parent;
-    var type = data.type;
-    var resource = function(id) {
-      var idPart = id !== undefined ? '/' + id : '';
-      var localPath = '/' + path + idPart;
-      var context = $.extend({}, resource);
-      context.path = this.path ? this.path : '' + localPath;
-      return context;
-    }
-    $.extend(resource, data);
-    resource.create = create;
-    resource.read = read;
-    resource.update = update;
-    resource.destroy = destroy;
-    resource.list = list;
-    resource.getPath = getPath;
-    resources[name] = resource;
-    if(parent) {
-      resources[parent][path] = resource;
-    } else {
-      inner[path] = resource;
-    }
+  var railsSinglePack = function(data) {
+    var payload = {};
+    payload[this.type] = data;
+    return payload;
   };
 
-  inner.initFromMetaTags = function() {
-    $('meta[content=room-resource]').each(function (i, element) {
-      var name = element.name;
-      var type = element.content;
-      var data = {};
-      for(var attribute in element.attributes) {
-        var attrName = element.attributes[attribute].name;
-        var re = new RegExp('^data-');
-        if(attrName && attrName.match(re)) {
-          data[attrName.replace(re, '')] =
-                                element.attributes[attribute].value;
-        }
-      }
-      inner.addResource(name, data);
-    });
+  var railsSingleUnpack = function(data) {
+    return data[this.type];
   };
+
+  var railsListUnpack = function(response) {
+    var data = [];
+    for(var i in response) {
+       data.push(response[i][this.type]);
+    }
+    return data;
+  };
+
+  var getPath = function() {
+    return this.path + '.' + inner.extension;
+  };
+
+  var wrapSuccess = function(type, successCallback, options) {
+    return function(response) {
+      successCallback(inner.unpackData[type].
+                     call(options, response));
+    };
+  };
+
+
+// Initialization
+
+  inner.ajax = $.ajax;
+  inner.extension = "json";
+  inner.configurePackData('rails');
+  inner.initFromMetaTags();
 
 }(jQuery));
-
-$.room().initFromMetaTags();
