@@ -28,13 +28,16 @@
   };
 
   $.room().enterLoopbackMode();
-  $.room().addResource('grandfather', { path: 'grandparents',
+  $.room().addResource('grandfather', { path: 'grandfathers',
                                         type: 'grandfather' });
+  $.room().addResource('grandmother', { path: 'grandmothers',
+                                        type: 'grandmother' });
+
 
   var data = { name: 'Xavier' };
   var createdId = -1;
   asyncTest('creating a root', function() {
-    $.room().grandparents().create(data,
+    $.room().grandfathers().create(data,
       function(response) {
         createdId = response.id;
         (success(data)(response));
@@ -43,15 +46,23 @@
   });
 
   asyncTest('reading the root', function() {
-    $.room().grandparents(2).read(success(data), failure);
+    $.room().grandfathers(2).read(success(data), failure);
+  });
+
+  asyncTest('creates independent contexts', function() {
+    var grandfathers2 = $.room().grandfathers(2);
+    // creating another context 
+    $.room().grandmothers().create({}, function() {}, function() {}); 
+    grandfathers2.read(success(data), failure);
   });
 
   asyncTest('destroying the root', function() {
-    $.room().grandparents(2).destroy(success(data), failure);
+    $.room().grandfathers(2).destroy(success(data), failure);
   });
 
   asyncTest('fails when trying to destroy a non-existent resource', function() {
-    $.room().grandparents('this-resource-doesnt-exist').destroy(failure, success());
+    $.room().grandfathers('this-resource-doesnt-exist').destroy(failure, success());
   });
+
 
 }())

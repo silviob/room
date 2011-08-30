@@ -2,7 +2,6 @@
 
   var inner = {};
   var resources = {};
-  var currentPath = '';
   var loopbackStore = { data: {}, parent: null };
 
   var printStore = function(store, level) {
@@ -90,7 +89,9 @@
       options.success(store.data[stored].data);
       break;
     case 'get':
-      var store = getOrCreateLeaf(options.url, loopbackStore, true);
+      var store = getOrCreateLeaf(options.url, loopbackStore, false);
+      console.log('getting');
+      printStore(store);
       options.success(store.data);
       break;
     case 'delete':
@@ -121,9 +122,9 @@
 
   inner.leaveLoopbackMode();
 
-  var getAndClearPath = function() {
-    var path = currentPath;
-    currentPath = '';
+  var getPath = function() {
+    var path = this.path + '.' + inner.extension;;
+    console.log('accesssing: ' + path);
     return path;
   };
 
@@ -135,8 +136,7 @@
   };
 
   var create = function(data, success, failure) {
-    var url = getAndClearPath() + '.' + inner.extension;
-    console.log(url);
+    var url = this.getPath();
     inner.ajax({
       url: url,
       data: inner.packData.create.
@@ -148,8 +148,7 @@
   };
 
   var read = function(success, failure) {
-    var url = getAndClearPath() + '.' + inner.extension;
-    console.log(url);
+    var url = this.getPath();
     inner.ajax({
       url: url,
       success: wrapSuccess('read', success, this),
@@ -159,7 +158,7 @@
 
   var update = function(data, success, failure) {
     inner.ajax({
-      url: getAndClearPath() + '.' + inner.extension,
+      url: this.getPath(),
       data: inner.packData.update.
                      call(this, data),
       type: 'put',
@@ -170,7 +169,7 @@
 
   var destroy = function(success, failure) {
     inner.ajax({
-      url: getAndClearPath() + '.' + inner.extension,
+      url: this.getPath(),
       type: 'delete',
       success: wrapSuccess('destroy', success, this),
       error: failure
@@ -179,14 +178,13 @@
 
   var list = function(success, failure) {
     inner.ajax({
-      url: getAndClearPath() + '.' + inner.extension,
+      url: this.getPath(),
       success: wrapSuccess('list', success, this),
       error: failure
     });
   };
 
   $.room = function() {
-    getAndClearPath();
     return inner;
   };
 
@@ -196,15 +194,18 @@
     var type = data.type;
     var resource = function(id) {
       var idPart = id !== undefined ? '/' + id : '';
-      currentPath += '/' + path + idPart;
-      return resource;
+      var localPath = '/' + path + idPart;
+      var context = $.extend({}, resource);
+      context.path = this.path ? this.path : '' + localPath;
+      return context;
     }
-    resource.type = data.type;
+    $.extend(resource, data);
     resource.create = create;
     resource.read = read;
     resource.update = update;
     resource.destroy = destroy;
     resource.list = list;
+    resource.getPath = getPath;
     resources[name] = resource;
     if(parent) {
       resources[parent][path] = resource;
