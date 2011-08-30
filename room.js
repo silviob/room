@@ -21,7 +21,7 @@
       var idPart = id !== undefined ? '/' + id : '';
       var localPath = '/' + path + idPart;
       var context = $.extend({}, resource);
-      context.path = this.path ? this.path : '' + localPath;
+      context.path = (this.path ? this.path : '') + localPath;
       return context;
     }
     $.extend(resource, data);

@@ -28,11 +28,14 @@
   };
 
   $.room().enterLoopbackMode();
+  $.room().configurePackData('identity');
   $.room().addResource('grandfather', { path: 'grandfathers',
                                         type: 'grandfather' });
   $.room().addResource('grandmother', { path: 'grandmothers',
                                         type: 'grandmother' });
-
+  $.room().addResource('father', { path:   'fathers',
+                                   type:   'father',
+                                   parent: 'grandfather' });
 
   var data = { name: 'Xavier' };
   var createdId = -1;
@@ -45,19 +48,28 @@
       failure);
   });
 
+  test('we have an id', function() {
+    ok(createdId && createdId != -1, 'createdId shouldnt be -1: ' + createdId);
+  });
+
   asyncTest('reading the root', function() {
-    $.room().grandfathers(2).read(success(data), failure);
+    $.room().grandfathers(createdId).read(success(data), failure);
   });
 
   asyncTest('creates independent contexts', function() {
-    var grandfathers2 = $.room().grandfathers(2);
+    var grandfathers2 = $.room().grandfathers(createdId);
     // creating another context 
     $.room().grandmothers().create({}, function() {}, function() {}); 
     grandfathers2.read(success(data), failure);
   });
 
+  asyncTest('can create a child', function() {
+    var father = { name: 'some father name' };
+    $.room().grandfathers(createdId).fathers().create(father, success(father), failure);
+  });
+
   asyncTest('destroying the root', function() {
-    $.room().grandfathers(2).destroy(success(data), failure);
+    $.room().grandfathers(createdId).destroy(success(data), failure);
   });
 
   asyncTest('fails when trying to destroy a non-existent resource', function() {
