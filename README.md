@@ -82,12 +82,29 @@ Using **Room**
    2.   Configure **Room** through the `$room` global variable.
    3.   Tell **Room** about the resources that are available to your app.
    4.   Start issuing REST requests.
-   
+
 Dependencies
 ------------
 
 **Room** dependes on jQuery. The test utils, which are defined in 
 `room-test-utils.js` depend both in jQuery and in QUnit.
+
+Status
+------
+
+**Room** is fairly new and it hasn't been used in a production environment
+yet. That being said, it's got a fairly good test coverage and it has the
+potential to provide large productivity improvements to any project that
+uses REST heavily.
+
+Limitations
+-----------
+
+Currently, **room** is only being tested with `JSON` payloads. It's possible
+to configure it to request other formats, but there are no tests ensuring
+this capability at this point.
+
+Also, **room** is limited to same origin policy.
 
 License
 -------
