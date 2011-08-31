@@ -12,8 +12,12 @@
   }
 
   var printStore = function(store, level) {
-    store = store || loopbackStore;
-    level = level || '';
+    store = store != undefined ? store : loopbackStore;
+    level = level != undefined ? level : '';
+    if(level.length > 12) { 
+      console.log('printing too deep. bailed.');
+      return;
+    };
     for(var i in store.data) {
       console.log(level + i);
       printStore(store.data[i], level + '  ');
@@ -44,14 +48,39 @@
     case 'post':
       var store = getOrCreateLeaf(options.url, loopbackStore, true);
       var stored = 0;
-      for(var i in store) { stored++ };
+      for(var i in store.data) { stored++ };
       store.data[stored] = makeLeaf(options.data, store);
       store.data[stored].data.id = stored;
+      store.dir = true;
       options.success(store.data[stored].data);
+      break;
+    case 'put':
+      var store = getOrCreateLeaf(options.url, loopbackStore, false);
+      if(!store) {
+        options.error();
+      } else {
+        for(i in options.data) {
+          store.data[i] = options.data[i];
+        }
+        options.success(store.data);
+      }
       break;
     case 'get':
       var store = getOrCreateLeaf(options.url, loopbackStore, false);
-      options.success(store.data);
+      if(!store) {
+        options.error();
+      } else {
+        var data = store.data;
+        if(store.dir) {
+          data = new Array();
+          for(var i in store.data) {
+            if(i != '__proto__') {
+              data.push(store.data[i]);
+            }
+          }
+        }
+        options.success(data);
+      }
       break;
     case 'delete':
       var store = getOrCreateLeaf(options.url, loopbackStore, false);

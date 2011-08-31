@@ -49,7 +49,7 @@
   });
 
   test('we have an id', function() {
-    ok(createdId && createdId != -1, 'createdId shouldnt be -1: ' + createdId);
+    ok(createdId != undefined && createdId != -1, 'createdId shouldnt be -1: ' + createdId);
   });
 
   asyncTest('reading the root', function() {
@@ -68,13 +68,45 @@
     $.room().grandfathers(createdId).fathers().create(father, success(father), failure);
   });
 
-  asyncTest('destroying the root', function() {
+  asyncTest('destroying the created grandfather', function() {
     $.room().grandfathers(createdId).destroy(success(data), failure);
+  });
+
+  asyncTest('creating 10 grandmothers', function() {
+    for(var i = 0; i < 9; i++) {
+      $.room().grandmothers().create({}, function() {}, failure);
+    }
+    $.room().grandmothers().create({}, success(), failure);
+  });
+
+  asyncTest('listing the recently created grandmothers', function() {
+    $.room().grandmothers().list(function(data) {
+      ok(data.length > 10, 'should be at least 10');
+      (success()());
+    },
+    failure);
+  });
+
+  var nana = { name: 'Nana' };
+  var nanaId = 5;
+  asyncTest('updating a grandmother', function() {
+    $.room().grandmothers(nanaId).update(nana, success(nana), failure);
+  });
+
+  asyncTest('ensuring the update took place', function() {
+    $.room().grandmothers(nanaId).read(success(nana), failure);
+  });
+
+  asyncTest('fails when trying to read a non-existent resource', function() {
+    $.room().grandfathers('this-resource-doesnt-exist').read(failure, success());
+  });
+
+  asyncTest('fails when trying to update a non-existent resource', function() {
+    $.room().grandfathers('this-resource-doesnt-exist').update({}, failure, success());
   });
 
   asyncTest('fails when trying to destroy a non-existent resource', function() {
     $.room().grandfathers('this-resource-doesnt-exist').destroy(failure, success());
   });
-
 
 }())

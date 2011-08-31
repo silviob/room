@@ -163,7 +163,6 @@
     };
   };
 
-
 // Initialization
 
   inner.ajax = $.ajax;
