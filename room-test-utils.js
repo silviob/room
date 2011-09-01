@@ -1,7 +1,7 @@
 
 (function() {
 
-  var inner = $.room();
+  var inner = $room.inner;
 
   var loopbackStore = { data: {}, parent: null };
 
@@ -30,13 +30,17 @@
   };
 
   var getOrCreateLeaf = function(path, store, enableCreate) {
-    var parts = path.split('/');
-    var zeroth = parts[0];
-    parts = parts.slice(1);
-    if(zeroth === '') return getOrCreateLeaf(parts.join('/'), store, enableCreate);
-    if(enableCreate && !store.data[zeroth]) store.data[zeroth] = makeLeaf({}, store);
-    if(parts.length == 0) return store.data[zeroth];
-    return getOrCreateLeaf(parts.join('/'), store.data[zeroth], enableCreate);
+    try {
+      var parts = path.split('/');
+      var zeroth = parts[0];
+      parts = parts.slice(1);
+      if(zeroth === '') return getOrCreateLeaf(parts.join('/'), store, enableCreate);
+      if(enableCreate && !store.data[zeroth]) store.data[zeroth] = makeLeaf({}, store);
+      if(parts.length == 0) return store.data[zeroth];
+      return getOrCreateLeaf(parts.join('/'), store.data[zeroth], enableCreate);
+    } catch (e) {
+      return undefined;
+    }
   };
 
   var loopback = function(options) {

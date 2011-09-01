@@ -27,20 +27,20 @@
     start();
   };
 
-  $.room().enterLoopbackMode();
-  $.room().configurePackData('identity');
-  $.room().addResource('grandfather', { path: 'grandfathers',
+  $room().enterLoopbackMode();
+  $room().configurePackData('identity');
+  $room().addResource('grandfather', { path: 'grandfathers',
                                         type: 'grandfather' });
-  $.room().addResource('grandmother', { path: 'grandmothers',
+  $room().addResource('grandmother', { path: 'grandmothers',
                                         type: 'grandmother' });
-  $.room().addResource('father', { path:   'fathers',
+  $room().addResource('father', { path:   'fathers',
                                    type:   'father',
                                    parent: 'grandfather' });
 
   var data = { name: 'Xavier' };
   var createdId = -1;
   asyncTest('creating a root', function() {
-    $.room().grandfathers().create(data,
+    $room().grandfathers().create(data,
       function(response) {
         createdId = response.id;
         (success(data)(response));
@@ -53,40 +53,57 @@
   });
 
   asyncTest('reading the root', function() {
-    $.room().grandfathers(createdId).read(success(data), failure);
+    $room().grandfathers(createdId).read(success(data), failure);
   });
 
   asyncTest('creates independent contexts', function() {
-    var grandfathers2 = $.room().grandfathers(createdId);
+    var grandfathers2 = $room().grandfathers(createdId);
     // creating another context 
-    $.room().grandmothers().create({}, function() {}, function() {}); 
+    $room().grandmothers().create({}, function() {}, function() {}); 
     grandfathers2.read(success(data), failure);
+  });
+
+  asyncTest('can override the root path', function() {
+    $room({ path: '/some-other-root' }).grandfathers(createdId).
+                                             read(failure, success());
   });
 
   asyncTest('can create a child', function() {
     var father = { name: 'some father name' };
-    $.room().grandfathers(createdId).fathers().create(father, success(father), failure);
+    $room().grandfathers(createdId).fathers().create(father, success(father), failure);
   });
 
   asyncTest('can create a child with a detached context', function() {
     var father = { name: 'some father name' };
-    var grandpa = $.room().grandfathers;
-    grandpa(createdId).fathers().create(father, success(father), failure);
+    var grandpa = $room().grandfathers(createdId);
+    grandpa.fathers().create(father, success(father), failure);
+  });
+
+  asyncTest('cant create a child with a detached factory', function() {
+    var father = { name: 'some father name' };
+    var fathers = $room().grandfathers(createdId).fathers;
+    try {
+      fathers().create(father, success(father), failure);
+      ok(false, 'shouldve thrown an exception');
+    } catch (e) {
+      ok(e, 'threw exception: ' + e);
+      start();
+    }
   });
 
   asyncTest('destroying the created grandfather', function() {
-    $.room().grandfathers(createdId).destroy(success(data), failure);
+    $room().grandfathers(createdId).destroy(success(data), failure);
   });
 
   asyncTest('creating 10 grandmothers', function() {
     for(var i = 0; i < 9; i++) {
-      $.room().grandmothers().create({}, function() {}, failure);
+      $room().grandmothers().create({}, function() {}, failure);
     }
-    $.room().grandmothers().create({}, success(), failure);
+    $room().grandmothers().create({}, success(), failure);
   });
 
   asyncTest('listing the recently created grandmothers', function() {
-    $.room().grandmothers().list(function(data) {
+    $room().grandmothers().list(function(data) {
       ok(data.length > 10, 'should be at least 10');
       (success()());
     },
@@ -96,23 +113,23 @@
   var nana = { name: 'Nana' };
   var nanaId = 5;
   asyncTest('updating a grandmother', function() {
-    $.room().grandmothers(nanaId).update(nana, success(nana), failure);
+    $room().grandmothers(nanaId).update(nana, success(nana), failure);
   });
 
   asyncTest('ensuring the update took place', function() {
-    $.room().grandmothers(nanaId).read(success(nana), failure);
+    $room().grandmothers(nanaId).read(success(nana), failure);
   });
 
   asyncTest('fails when trying to read a non-existent resource', function() {
-    $.room().grandfathers('this-resource-doesnt-exist').read(failure, success());
+    $room().grandfathers('this-resource-doesnt-exist').read(failure, success());
   });
 
   asyncTest('fails when trying to update a non-existent resource', function() {
-    $.room().grandfathers('this-resource-doesnt-exist').update({}, failure, success());
+    $room().grandfathers('this-resource-doesnt-exist').update({}, failure, success());
   });
 
   asyncTest('fails when trying to destroy a non-existent resource', function() {
-    $.room().grandfathers('this-resource-doesnt-exist').destroy(failure, success());
+    $room().grandfathers('this-resource-doesnt-exist').destroy(failure, success());
   });
 
 }())

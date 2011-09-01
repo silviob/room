@@ -1,29 +1,47 @@
 (function($) {
 
+  /**
+   This function creates contexts, which encapsulate all of the configuration
+   and state of the function chain. Contexts inherit all of the properties of
+   the factory, and they get a calculated path fragment, which will come into
+   play when calling any of the CRUDL functions.
+  **/
+  var createContextFactory = function(path) {
+    var factory = function(id) {
+      if(!factory.isRoot && (!this || this.path == undefined)) {
+        throw "you should call this function as a member to the previous factory"; 
+      }
+      var idPart = id !== undefined ? '/' + id : '';
+      var localPath = path === '' ? '' : '/' + path + idPart;
+      var context = $.extend({}, factory);
+      context.path = (this.path ? this.path : '') + localPath;
+      return context;
+    };
+    return factory;
+  };
 
   // State
 
-  var inner = {};
+  var inner = createContextFactory('');
   var resources = {};
 
 
   // Public API
 
-  $.room = function() {
-    return inner;
+  $room = function(configuration) {
+    configuration = configuration ? configuration : {};
+    var context = inner();
+    $.extend(context, configuration);
+    return context;
   };
+  $room.inner = inner;
+  $room.inner.isRoot = true;
 
   inner.addResource = function(name, data) {
     var path = data.path;
     var parent = data.parent;
     var type = data.type;
-    var resource = function(id) {
-      var idPart = id !== undefined ? '/' + id : '';
-      var localPath = '/' + path + idPart;
-      var context = $.extend({}, resource);
-      context.path = (this.path ? this.path : '') + localPath;
-      return context;
-    }
+    var resource = createContextFactory(path);
     $.extend(resource, data);
     resource.create = create;
     resource.read = read;
