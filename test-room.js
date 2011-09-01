@@ -68,6 +68,12 @@
     $.room().grandfathers(createdId).fathers().create(father, success(father), failure);
   });
 
+  asyncTest('can create a child with a detached context', function() {
+    var father = { name: 'some father name' };
+    var grandpa = $.room().grandfathers;
+    grandpa(createdId).fathers().create(father, success(father), failure);
+  });
+
   asyncTest('destroying the created grandfather', function() {
     $.room().grandfathers(createdId).destroy(success(data), failure);
   });
