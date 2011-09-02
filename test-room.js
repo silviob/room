@@ -40,6 +40,8 @@
   var data = { name: 'Xavier' };
   var createdId = -1;
   asyncTest('creating a root', function() {
+    $roomTestUtils.expectUrl = '/grandfathers.json';
+    $roomTestUtils.expectVerb = 'post';
     $room().grandfathers().create(data,
       function(response) {
         createdId = response.id;
@@ -53,39 +55,55 @@
   });
 
   asyncTest('reading the root', function() {
+    $roomTestUtils.expectUrl = '/grandfathers/' + createdId + '.json';
+    $roomTestUtils.expectVerb = 'get';
     $room().grandfathers(createdId).read(success(data), failure);
   });
 
   asyncTest('creates independent contexts', function() {
     var grandfathers2 = $room().grandfathers(createdId);
     // creating another context 
-    $room().grandmothers().create({}, function() {}, function() {}); 
+    $roomTestUtils.expectUrl = '/grandmothers.json';
+    $roomTestUtils.expectVerb = 'post';
+    $room().grandmothers().create({}, function() {}, function() {});
+    $roomTestUtils.expectUrl = '/grandfathers/' + createdId + '.json';
+    $roomTestUtils.expectVerb = 'get';
     grandfathers2.read(success(data), failure);
   });
 
   asyncTest('can override the root path', function() {
+    $roomTestUtils.expectUrl = '/some-other-root/grandfathers/' + createdId + '.json';
+    $roomTestUtils.expectVerb = 'get';
     $room({ path: '/some-other-root' }).grandfathers(createdId).
                                              read(failure, success());
   });
 
   asyncTest('can create a child', function() {
     var father = { name: 'some father name' };
+    $roomTestUtils.expectUrl = '/grandfathers/' + createdId + '/fathers.json';
+    $roomTestUtils.expectVerb = 'post';
     $room().grandfathers(createdId).fathers().create(father, success(father), failure);
   });
 
   asyncTest('can create a child with a detached context', function() {
     var father = { name: 'some father name' };
     var grandpa = $room().grandfathers(createdId);
+    $roomTestUtils.expectUrl = '/grandfathers/' + createdId + '/fathers.json';
+    $roomTestUtils.expectVerb = 'post';
     grandpa.fathers().create(father, success(father), failure);
   });
 
   asyncTest('can create a child with a detached factory', function() {
     var father = { name: 'some father name' };
     var fathers = $room().grandfathers(createdId).fathers;
+    $roomTestUtils.expectUrl = '/grandfathers/' + createdId + '/fathers.json';
+    $roomTestUtils.expectVerb = 'post';
     fathers().create(father, success(father), failure);
   });
 
   asyncTest('destroying the created grandfather', function() {
+    $roomTestUtils.expectUrl = '/grandfathers/' + createdId + '.json';
+    $roomTestUtils.expectVerb = 'delete';
     $room().grandfathers(createdId).destroy(success(data), failure);
   });
 
@@ -97,6 +115,8 @@
   });
 
   asyncTest('listing the recently created grandmothers', function() {
+    $roomTestUtils.expectUrl = '/grandmothers.json';
+    $roomTestUtils.expectVerb = 'get';
     $room().grandmothers().list(function(data) {
       ok(data.length > 10, 'should be at least 10');
       (success()());
@@ -107,6 +127,8 @@
   var nana = { name: 'Nana' };
   var nanaId = 5;
   asyncTest('updating a grandmother', function() {
+    $roomTestUtils.expectUrl = '/grandmothers/' + nanaId + '.json';
+    $roomTestUtils.expectVerb = 'put';
     $room().grandmothers(nanaId).update(nana, success(nana), failure);
   });
 

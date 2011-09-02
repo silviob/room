@@ -2,6 +2,7 @@
 (function() {
 
   var inner = $room.inner;
+  $roomTestUtils = {};
 
   var loopbackStore = { data: {}, parent: null };
 
@@ -45,8 +46,12 @@
 
   var loopback = function(options) {
     var re = new RegExp('\.' + inner.extension + '$');
+    if($roomTestUtils.expectUrl) equal(options.url, $roomTestUtils.expectUrl, 'URL doesnt match');
+    $roomTestUtils.expectUrl = undefined;
     options.url = options.url.replace(re, '');
     options.type = options.type || 'get';
+    if($roomTestUtils.expectVerb) equal(options.type, $roomTestUtils.expectVerb, 'Verb doesnt match');
+    $roomTestUtils.expectVerb = undefined;
     console.log('type: ' + options.type + ' url: ' + options.url);
     switch(options.type.toLowerCase()) {
     case 'post':
