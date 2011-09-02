@@ -29,13 +29,12 @@
 
   $room().enterLoopbackMode();
   $room().configurePackData('identity');
-  $room().addResource('grandfather', { path: 'grandfathers',
-                                        type: 'grandfather' });
-  $room().addResource('grandmother', { path: 'grandmothers',
-                                        type: 'grandmother' });
-  $room().addResource('father', { path:   'fathers',
-                                   type:   'father',
-                                   parent: 'grandfather' });
+  $room().addResource('/grandfathers', { path: 'grandfathers',
+                                         type: 'grandfather' });
+  $room().addResource('/grandmothers', { path: 'grandmothers',
+                                         type: 'grandmother' });
+  $room().addResource('/grandfathers/{id}/fathers', { path:   'fathers',
+                                                      type:   'father' });
 
   var data = { name: 'Xavier' };
   var createdId = -1;

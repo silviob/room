@@ -32,7 +32,6 @@
   // State
 
   var inner = createContextFactory('');
-  var resources = {};
 
 
   // Public API
@@ -46,11 +45,17 @@
   };
   $room.inner = inner;
 
-  inner.addResource = function(name, data) {
-    var path = data.path;
-    var parent = data.parent;
-    var type = data.type;
-    var resource = createContextFactory(path);
+  inner.addResource = function(path, data) {
+    var pathParts = path.split('/');
+    var parent = inner;
+    var current = undefined;
+    for(var i in pathParts) {
+      if(pathParts[i] == '' || pathParts[i][0] == '{')
+        continue;
+      current = pathParts[i];
+      if(parent[current]) parent = parent[current];
+    }
+    var resource = createContextFactory(current);
     $.extend(resource, data);
     resource.create = create;
     resource.read = read;
@@ -58,12 +63,7 @@
     resource.destroy = destroy;
     resource.list = list;
     resource.getPath = getPath;
-    resources[name] = resource;
-    if(parent) {
-      resources[parent][path] = resource;
-    } else {
-      inner[path] = resource;
-    }
+    parent[current] = resource;
   };
 
   inner.configurePackData = function(config) {
