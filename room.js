@@ -7,16 +7,25 @@
    play when calling any of the CRUDL functions.
   **/
   var createContextFactory = function(path) {
-    var factory = function(id) {
-      if(!factory.isRoot && (!this || this.path == undefined)) {
-        throw "you should call this function as a member to the previous factory"; 
+    var factory = function() {
+      var context = function(id) {
+        var existingPath = (context.previous && context.previous.path) ? 
+                                                 context.previous.path : '';
+        var idPart = id !== undefined ? '/' + id : '';
+        var localPath = path === '' ? '' : '/' + path + idPart;
+        context.path = existingPath + localPath;
+        return context;
+      };
+      $.extend(context, factory);
+      for(var i in context) {
+        if(context[i].isFactory) {
+          context[i] = context[i]();
+          context[i].previous = context;
+        }
       }
-      var idPart = id !== undefined ? '/' + id : '';
-      var localPath = path === '' ? '' : '/' + path + idPart;
-      var context = $.extend({}, factory);
-      context.path = (this.path ? this.path : '') + localPath;
       return context;
     };
+    factory.isFactory = true;
     return factory;
   };
 
@@ -31,11 +40,11 @@
   $room = function(configuration) {
     configuration = configuration ? configuration : {};
     var context = inner();
+    context.previous = configuration;
     $.extend(context, configuration);
-    return context;
+    return context();
   };
   $room.inner = inner;
-  $room.inner.isRoot = true;
 
   inner.addResource = function(name, data) {
     var path = data.path;

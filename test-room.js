@@ -79,16 +79,10 @@
     grandpa.fathers().create(father, success(father), failure);
   });
 
-  asyncTest('cant create a child with a detached factory', function() {
+  asyncTest('can create a child with a detached factory', function() {
     var father = { name: 'some father name' };
     var fathers = $room().grandfathers(createdId).fathers;
-    try {
-      fathers().create(father, success(father), failure);
-      ok(false, 'shouldve thrown an exception');
-    } catch (e) {
-      ok(e, 'threw exception: ' + e);
-      start();
-    }
+    fathers().create(father, success(father), failure);
   });
 
   asyncTest('destroying the created grandfather', function() {
