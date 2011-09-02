@@ -17,7 +17,7 @@ Let's say you need to read a resource located at:
 The code would look like:
 
 ```javascript
-  $room.posts(3).comments(2).read(
+  $room().posts(3).comments(2).read(
     function(data) {
       // what to do on success
     },
@@ -30,7 +30,7 @@ Or perhaps you would like to add a new comment to the post resource with
 id == 4, then the code would be:
 
 ```javascript
-  $room.posts(4).comments().create( { /* comment data */ },
+  $room().posts(4).comments().create( { /* comment data */ },
     function(data) {
       // what to do on success
     },
@@ -58,9 +58,9 @@ Then, we can create multiple isolated contexts to access each of the URLs
 listed above. Like this:
 
 ```javascript
-  var users = $room.users;
-  var posts = $room.posts;
-  var commentsForPost5 = $room.posts(5).comments;
+  var users = $room().users;
+  var posts = $room().posts;
+  var commentsForPost5 = $room().posts(5).comments;
   
   users(10).destroy(); // destroys user 10 without caring for callbacks
   posts().create({ name: 'new post', text: '...' }); // makes a new post
