@@ -1,41 +1,15 @@
 (function($) {
 
-  /**
-   This function creates contexts, which encapsulate all of the configuration
-   and state of the function chain. Contexts inherit all of the properties of
-   the factory, and they get a calculated path fragment, which will come into
-   play when calling any of the CRUDL functions.
-  **/
-  var createContextFactory = function(path) {
-    var factory = function() {
-      var context = function(id) {
-        var existingPath = (context.previous && context.previous.path) ? 
-                                                 context.previous.path : '';
-        var idPart = id !== undefined ? '/' + id : '';
-        var localPath = path === '' ? '' : '/' + path + idPart;
-        context.path = existingPath + localPath;
-        return context;
-      };
-      $.extend(context, factory);
-      for(var i in context) {
-        if(context[i].isFactory) {
-          context[i] = context[i]();
-          context[i].previous = context;
-        }
-      }
-      return context;
-    };
-    factory.isFactory = true;
-    return factory;
-  };
-
-  // State
-
-  var inner = createContextFactory('');
-
 
   // Public API
 
+  /*
+   The global function used as namespace. It returns the root context
+   for the call chain. Through the configuration object, one can override
+   the root path by setting the 'path' attribute to the new value. The
+   override will only affect the current call, and any derived contexts
+   from it.
+  */
   $room = function(configuration) {
     configuration = configuration ? configuration : {};
     var context = inner();
@@ -43,9 +17,14 @@
     $.extend(context, configuration);
     return context();
   };
-  $room.inner = inner;
 
-  inner.addResource = function(path, data) {
+  /*
+   Registers a new resource location. Path should contain an URI
+   template, and the last path component should be the residence of
+   the resource being registered. Data can contain metadata which
+   will be available to the pack/unpack callbacks.
+  */
+  var addResource = function(path, data) {
     var pathParts = path.split('/');
     var parent = inner;
     var current = undefined;
@@ -66,14 +45,21 @@
     parent[current] = resource;
   };
 
-  inner.configurePackData = function(config) {
-    inner.packData = {};
+  /*
+   Your backend may expect your data payload to be 'packed' in a 
+   particular fashion. If you want the application to handle objects
+   which just carry the data, without having to worry about backend
+   details, then you can configure room with a packer and an unpacker
+   for each verb. Room will call those functions on the way to and
+   from the server. If you want to care about the details, just call
+   this function with the argument 'identity'.
+  */
+  var configurePackData = function(config) {
     inner.packData.create = config == 'rails' ? railsSinglePack
                                               : identity;
     inner.packData.update = config == 'rails' ? railsSinglePack
                                               : identity;
 
-    inner.unpackData = {};
     inner.unpackData.create  = config == 'rails' ? railsSingleUnpack
                                                  : identity;
     inner.unpackData.read    = config == 'rails' ? railsSingleUnpack
@@ -86,9 +72,15 @@
                                                  : identity;
   };
 
-  inner.initFromMetaTags = function() {
+  /*
+   Registers the resources into Room through meta tags. The tags have
+   to have the content equal 'room-resource'. The name must be the path
+   where the resource resides, as per the addResource function. Any
+   data- HTML attributes will be passed to addResource as metadata.
+  */
+  var initFromMetaTags = function() {
     $('meta[content=room-resource]').each(function (i, element) {
-      var name = element.name;
+      var path = element.name;
       var type = element.content;
       var data = {};
       for(var attribute in element.attributes) {
@@ -99,7 +91,7 @@
                                 element.attributes[attribute].value;
         }
       }
-      inner.addResource(name, data);
+      inner.addResource(path, data);
     });
   };
 
@@ -155,11 +147,82 @@
     });
   };
 
+
+// Internals from here on
+
+  /*
+   This function creates a context factory. Context factories serve two
+   purposes, one of them is to mark the object as being a factory. The
+   other purpose is for the factory to carry all of the extra data that
+   the user may specify when defining the resource. They do this by the
+   mere fact of being an object.
+
+   Contexts calculate the current path and add it to their path
+   attribute. Also, they look at all their attributes and call all of
+   the attributes which are also factories. After doing this, it goes
+   ahead and registers itself as the 'previous' to the newly created
+   context. This sounds rather serious and complicated, perhaps even
+   overkill, but it buys us the rather nice property of being able to
+   reuse any part of the function call chain way after the original call,
+   and we can create two independent call chains with completely different
+   originating contexts, which is kinda cool, and useful. Don't believe
+   me? Check out how we are dynamically changing the path of the root
+   in the tests.
+  */
+  var createContextFactory = function(path) {
+    var factory = function() {
+      var context = function(id) {
+        var existingPath = (context.previous && context.previous.path) ? 
+                                                 context.previous.path : '';
+        var idPart = id !== undefined ? '/' + id : '';
+        var localPath = path === '' ? '' : '/' + path + idPart;
+        context.path = existingPath + localPath;
+        return context;
+      };
+      $.extend(context, factory);
+      for(var i in context) {
+        if(context[i].isFactory) {
+          context[i] = context[i]();
+          context[i].previous = context;
+        }
+      }
+      return context;
+    };
+    factory.isFactory = true;
+    return factory;
+  };
+
+
+  // State
+
+  var inner = createContextFactory('');
+  inner.addResource = addResource;
+  inner.configurePackData = configurePackData;
+  inner.initFromMetaTags = initFromMetaTags;
+  inner.packData = {};
+  inner.unpackData = {};
+  $room.inner = inner;
+
+
 // Helper functions
+
+  var wrapSuccess = function(type, successCallback, options) {
+    return function(response) {
+      successCallback(inner.unpackData[type].
+                     call(options, response));
+    };
+  };
 
   var identity = function(data) { 
     return data;
   };
+
+  var getPath = function() {
+    return this.path + '.' + inner.extension;
+  };
+
+
+// Packers and unpackers that work with the way that Rails does JSON.
 
   var railsSinglePack = function(data) {
     var payload = {};
@@ -179,16 +242,6 @@
     return data;
   };
 
-  var getPath = function() {
-    return this.path + '.' + inner.extension;
-  };
-
-  var wrapSuccess = function(type, successCallback, options) {
-    return function(response) {
-      successCallback(inner.unpackData[type].
-                     call(options, response));
-    };
-  };
 
 // Initialization
 
