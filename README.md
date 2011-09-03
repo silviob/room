@@ -82,6 +82,20 @@ Using **Room**
    2.   Configure **Room** through the `$room` global variable.
    3.   Tell **Room** about the resources that are available to your app.
    4.   Start issuing REST requests.
+   
+Demo
+----
+
+You will find a very simple demo application at:
+
+
+http://severe-journey-655.heroku.com/
+
+Make sure to check out how **room** is being used by reading its
+application.js file at:
+
+
+   http://severe-journey-655.heroku.com/javascripts/application.js
 
 Dependencies
 ------------
