@@ -100,7 +100,7 @@
 
   var create = function(data, success, failure) {
     var url = this.getPath();
-    inner.ajax({
+    processXfer({
       url: url,
       data: inner.packData.create.
                      call(this, data),
@@ -112,7 +112,7 @@
 
   var read = function(success, failure) {
     var url = this.getPath();
-    inner.ajax({
+    processXfer({
       url: url,
       success: wrapSuccess('read', success, this),
       error: failure
@@ -120,7 +120,7 @@
   };
 
   var update = function(data, success, failure) {
-    inner.ajax({
+    processXfer({
       url: this.getPath(),
       data: inner.packData.update.
                      call(this, data),
@@ -131,7 +131,7 @@
   };
 
   var destroy = function(success, failure) {
-    inner.ajax({
+    processXfer({
       url: this.getPath(),
       type: 'delete',
       success: wrapSuccess('destroy', success, this),
@@ -140,7 +140,7 @@
   };
 
   var list = function(success, failure) {
-    inner.ajax({
+    processXfer({
       url: this.getPath(),
       success: wrapSuccess('list', success, this),
       error: failure
@@ -202,7 +202,7 @@
   inner.packData = {};
   inner.unpackData = {};
   $room.inner = inner;
-
+  var xferQ = [];
 
 // Helper functions
 
@@ -221,6 +221,38 @@
     return this.path + '.' + inner.extension;
   };
 
+  var getXHR = (function() {
+    var xhr;
+    if(window.XMLHttpRequest)
+      xhr = new XMLHttpRequest();
+    else
+      xhr = new ActiveXObject('Microsoft.XMLHTTP');
+    return function() { return xhr; };
+  }());
+
+  var sendNext = function() {
+    if(xferQ.length == 0) return;
+    var spec = xferQ[0];
+    xferQ.splice(0, 1);
+    inner.ajax(spec);
+  };
+
+  var processXfer = (function() {
+    var inFlight = 0;
+    var sendChain = function() {
+      inFlight--;
+      if(inFlight > 0) sendNext();
+    };
+    return function(spec) {
+      spec.xhr = getXHR;
+      spec.complete = sendChain;
+      xferQ.push(spec);
+      inFlight++;
+      if(inFlight == 1) {
+        sendNext();
+      }
+    };
+  }());
 
 // Packers and unpackers that work with the way that Rails does JSON.
 

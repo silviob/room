@@ -106,6 +106,7 @@
       }
       break;
     }
+    options.complete();
     printStore();
   }
 
