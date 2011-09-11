@@ -234,6 +234,10 @@
     if(xferQ.length == 0) return;
     var spec = xferQ[0];
     xferQ.splice(0, 1);
+    spec.beforeSend = function(xhr, settings) {
+      var token = $('meta[name="csrf-token"]').attr('content');
+      xhr.setRequestHeader('X-CSRF-Token', token);
+    }
     inner.ajax(spec);
   };
 
@@ -246,6 +250,7 @@
     return function(spec) {
       spec.xhr = getXHR;
       spec.complete = sendChain;
+      spec.cache = false;
       xferQ.push(spec);
       inFlight++;
       if(inFlight == 1) {
